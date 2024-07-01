@@ -1,0 +1,81 @@
+name: Setup Infrastructure
+
+on: [push]
+
+jobs:
+  setup-infrastructure:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        version: 'latest'
+        service_account_key: ${{ secrets.GCP_CREDENTIALS }}
+        project_id: your-gcp-project-id
+
+    - name: Authenticate to Google Cloud
+      run: gcloud auth activate-service-account --key-file=${{ secrets.GCP_CREDENTIALS }}
+
+    - name: Set GCP project
+      run: gcloud config set project your-gcp-project-id
+
+    - name: Check if SQL instance exists
+      id: sql-instance-check
+      run: |
+        if gcloud sql instances describe mininet-sql-instance; then
+          echo "SQL instance already exists"
+          echo "::set-output name=exists::true"
+        else
+          echo "SQL instance does not exist"
+          echo "::set-output name=exists::false"
+        fi
+
+    - name: Create SQL instance
+      if: steps.sql-instance-check.outputs.exists == 'false'
+      run: |
+        gcloud sql instances create mininet-sql-instance \
+          --database-version=MYSQL_8_0 \
+          --tier=db-f1-micro \
+          --region=us-central1
+
+    - name: Create SQL database
+      run: |
+        gcloud sql databases create mininet-db --instance=mininet-sql-instance
+
+    - name: Check if Cassandra instance exists
+      id: cassandra-instance-check
+      run: |
+        if gcloud compute instances describe cassandra-instance --zone=us-central1-a; then
+          echo "Cassandra instance already exists"
+          echo "::set-output name=exists::true"
+        else
+          echo "Cassandra instance does not exist"
+          echo "::set-output name=exists::false"
+        fi
+
+    - name: Create Cassandra instance
+      if: steps.cassandra-instance-check.outputs.exists == 'false'
+      run: |
+        gcloud compute instances create cassandra-instance \
+          --zone=us-central1-a \
+          --machine-type=e2-medium \
+          --image-family=debian-10 \
+          --image-project=debian-cloud \
+          --boot-disk-size=20GB \
+          --scopes=https://www.googleapis.com/auth/cloud-platform
+
+    - name: Set up Cassandra
+      run: |
+        gcloud compute ssh cassandra-instance --zone=us-central1-a --command "
+        sudo apt update &&
+        sudo apt install -y openjdk-11-jdk &&
+        echo 'deb http://www.apache.org/dist/cassandra/debian 311x main' | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list &&
+        curl https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add - &&
+        sudo apt update &&
+        sudo apt install -y cassandra &&
+        sudo service cassandra start
+        "
