@@ -29,6 +29,14 @@ jobs:
         gcloud config set project ${{ env.PROJECT_ID }}
         gcloud config set compute/zone ${{ env.ZONE }}
 
+    - name: Enable Cloud SQL Admin API
+      run: |
+        gcloud services enable sqladmin.googleapis.com
+
+    - name: Enable Compute Engine API
+      run: |
+        gcloud services enable compute.googleapis.com
+
     - name: Check if SQL instance exists
       id: sql-instance-check
       run: |
