@@ -1,6 +1,7 @@
 name: Setup Infrastructure
 
-on: [push]
+on:
+  push:
 
 env:
   PROJECT_ID: your-gcp-project-id
@@ -15,94 +16,94 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Authenticate to Google Cloud
-      id: auth-gcp
-      uses: google-github-actions/auth@v0
-      with:
-        credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      - name: Authenticate to Google Cloud
+        id: auth-gcp
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
-    - name: Configure gcloud
-      run: |
-        gcloud config set project ${{ env.PROJECT_ID }}
-        gcloud config set compute/zone ${{ env.ZONE }}
+      - name: Configure gcloud
+        run: |
+          gcloud config set project ${{ env.PROJECT_ID }}
+          gcloud config set compute/zone ${{ env.ZONE }}
 
-    - name: Enable Cloud SQL Admin API
-      run: |
-        gcloud services enable sqladmin.googleapis.com
+      - name: Enable Cloud SQL Admin API
+        run: |
+          gcloud services enable sqladmin.googleapis.com
 
-    - name: Enable Compute Engine API
-      run: |
-        gcloud services enable compute.googleapis.com
+      - name: Enable Compute Engine API
+        run: |
+          gcloud services enable compute.googleapis.com
 
-    - name: Check if SQL instance exists
-      id: sql-instance-check
-      run: |
-        if gcloud sql instances describe ${{ env.SQL_INSTANCE_NAME }}; then
-          echo "SQL instance already exists"
-          echo "::set-output name=exists::true"
-        else
-          echo "SQL instance does not exist"
-          echo "::set-output name=exists::false"
-        fi
+      - name: Check if SQL instance exists
+        id: sql-instance-check
+        run: |
+          if gcloud sql instances describe ${{ env.SQL_INSTANCE_NAME }}; then
+            echo "SQL instance already exists"
+            echo "::set-output name=exists::true"
+          else
+            echo "SQL instance does not exist"
+            echo "::set-output name=exists::false"
+          fi
 
-    - name: Create SQL instance
-      if: steps.sql-instance-check.outputs.exists == 'false'
-      run: |
-        gcloud sql instances create ${{ env.SQL_INSTANCE_NAME }} \
-          --database-version=MYSQL_8_0 \
-          --tier=db-f1-micro \
-          --region=${{ env.REGION }}
+      - name: Create SQL instance
+        if: steps.sql-instance-check.outputs.exists == 'false'
+        run: |
+          gcloud sql instances create ${{ env.SQL_INSTANCE_NAME }} \
+            --database-version=MYSQL_8_0 \
+            --tier=db-f1-micro \
+            --region=${{ env.REGION }}
 
-    - name: Check if database exists
-      id: db-check
-      run: |
-        if gcloud sql databases describe ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}; then
-          echo "Database already exists"
-          echo "::set-output name=exists::true"
-        else
-          echo "Database does not exist"
-          echo "::set-output name=exists::false"
-        fi
+      - name: Check if database exists
+        id: db-check
+        run: |
+          if gcloud sql databases describe ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}; then
+            echo "Database already exists"
+            echo "::set-output name=exists::true"
+          else
+            echo "Database does not exist"
+            echo "::set-output name=exists::false"
+          fi
 
-    - name: Create SQL database
-      if: steps.db-check.outputs.exists == 'false'
-      run: |
-        gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
+      - name: Create SQL database
+        if: steps.db-check.outputs.exists == 'false'
+        run: |
+          gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
 
-    - name: Check if Cassandra instance exists
-      id: cassandra-instance-check
-      run: |
-        if gcloud compute instances describe ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }}; then
-          echo "Cassandra instance already exists"
-          echo "::set-output name=exists::true"
-        else
-          echo "Cassandra instance does not exist"
-          echo "::set-output name=exists::false"
-        fi
+      - name: Check if Cassandra instance exists
+        id: cassandra-instance-check
+        run: |
+          if gcloud compute instances describe ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }}; then
+            echo "Cassandra instance already exists"
+            echo "::set-output name=exists::true"
+          else
+            echo "Cassandra instance does not exist"
+            echo "::set-output name=exists::false"
+          fi
 
-    - name: Create Cassandra instance
-      if: steps.cassandra-instance-check.outputs.exists == 'false'
-      run: |
-        gcloud compute instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
-          --zone=${{ env.ZONE }} \
-          --machine-type=e2-medium \
-          --image-family=debian-11 \
-          --image-project=debian-cloud \
-          --boot-disk-size=20GB \
-          --scopes=https://www.googleapis.com/auth/cloud-platform
+      - name: Create Cassandra instance
+        if: steps.cassandra-instance-check.outputs.exists == 'false'
+        run: |
+          gcloud compute instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
+            --zone=${{ env.ZONE }} \
+            --machine-type=e2-medium \
+            --image-family=debian-11 \
+            --image-project=debian-cloud \
+            --boot-disk-size=20GB \
+            --scopes=https://www.googleapis.com/auth/cloud-platform
 
-    - name: Set up Cassandra
-      run: |
-        gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
-        sudo apt update &&
-        sudo apt install -y openjdk-11-jdk &&
-        sudo apt install -y gnupg2 &&
-        wget -q -O - https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add - &&
-        echo 'deb http://www.apache.org/dist/cassandra/debian 41x main' | sudo tee -a /etc/apt/sources.list.d/cassandra.list &&
-        sudo apt update &&
-        sudo apt install -y cassandra &&
-        sudo service cassandra start
-        "
+      - name: Set up Cassandra
+        run: |
+          gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
+          sudo apt update &&
+          sudo apt install -y openjdk-11-jdk &&
+          sudo apt install -y gnupg &&
+          echo 'deb [arch=amd64] https://downloads.apache.org/cassandra/debian 40x main' | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list &&
+          curl https://downloads.apache.org/cassandra/KEYS | sudo apt-key add - &&
+          sudo apt update &&
+          sudo apt install -y cassandra &&
+          sudo service cassandra start
+          "
