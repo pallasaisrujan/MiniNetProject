@@ -56,7 +56,19 @@ jobs:
           --tier=db-f1-micro \
           --region=${{ env.REGION }}
 
+    - name: Check if database exists
+      id: db-check
+      run: |
+        if gcloud sql databases describe ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}; then
+          echo "Database already exists"
+          echo "::set-output name=exists::true"
+        else
+          echo "Database does not exist"
+          echo "::set-output name=exists::false"
+        fi
+
     - name: Create SQL database
+      if: steps.db-check.outputs.exists == 'false'
       run: |
         gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
 
