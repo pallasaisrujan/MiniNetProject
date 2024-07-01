@@ -77,7 +77,7 @@ jobs:
         gcloud compute instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
           --zone=${{ env.ZONE }} \
           --machine-type=e2-medium \
-          --image-family=debian-10 \
+          --image-family=debian-11 \
           --image-project=debian-cloud \
           --boot-disk-size=20GB \
           --scopes=https://www.googleapis.com/auth/cloud-platform
