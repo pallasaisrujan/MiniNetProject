@@ -28,12 +28,15 @@ jobs:
       run: |
         gcloud config set project ${{ env.PROJECT_ID }}
         gcloud config set compute/zone ${{ env.ZONE }}
+
     - name: Enable Cloud SQL Admin API
       run: |
         gcloud services enable sqladmin.googleapis.com
+
     - name: Enable Compute Engine API
       run: |
         gcloud services enable compute.googleapis.com
+
     - name: Check if SQL instance exists
       id: sql-instance-check
       run: |
@@ -44,6 +47,7 @@ jobs:
           echo "SQL instance does not exist"
           echo "::set-output name=exists::false"
         fi
+
     - name: Create SQL instance
       if: steps.sql-instance-check.outputs.exists == 'false'
       run: |
@@ -51,6 +55,7 @@ jobs:
           --database-version=MYSQL_8_0 \
           --tier=db-f1-micro \
           --region=${{ env.REGION }}
+
     - name: Check if database exists
       id: db-check
       run: |
@@ -61,10 +66,12 @@ jobs:
           echo "Database does not exist"
           echo "::set-output name=exists::false"
         fi
+
     - name: Create SQL database
       if: steps.db-check.outputs.exists == 'false'
       run: |
         gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
+
     - name: Check if Cassandra instance exists
       id: cassandra-instance-check
       run: |
@@ -75,6 +82,7 @@ jobs:
           echo "Cassandra instance does not exist"
           echo "::set-output name=exists::false"
         fi
+
     - name: Create Cassandra instance
       if: steps.cassandra-instance-check.outputs.exists == 'false'
       run: |
@@ -85,6 +93,7 @@ jobs:
           --image-project=debian-cloud \
           --boot-disk-size=20GB \
           --scopes=https://www.googleapis.com/auth/cloud-platform
+
     - name: Set up Cassandra
       run: |
         gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
