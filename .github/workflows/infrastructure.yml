@@ -12,8 +12,6 @@ env:
   CASSANDRA_INSTANCE_NAME: mininet-cassandra-instance
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
-  CASSANDRA_USERNAME: Birkbeck13924706
-  CASSANDRA_PASSWORD: Birkbeck@13924706
 
 jobs:
   setup-infrastructure:
@@ -41,6 +39,14 @@ jobs:
       - name: Enable Compute Engine API
         run: |
           gcloud services enable compute.googleapis.com
+
+      - name: Enable Bigtable Admin API
+        run: |
+          gcloud services enable bigtableadmin.googleapis.com
+
+      - name: Wait for API activation
+        run: |
+          sleep 60  # Wait for 60 seconds to allow the API activation to propagate
 
       - name: Check if SQL instance exists
         id: sql-instance-check
@@ -82,15 +88,6 @@ jobs:
         run: |
           gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
 
-      # Cassandra (Bigtable) setup steps
-      - name: Enable Bigtable Admin API
-        run: |
-          gcloud services enable bigtableadmin.googleapis.com
-
-      - name: Wait for API activation
-        run: |
-          sleep 60  # Wait for 60 seconds to allow the API activation to propagate
-
       - name: Check if Cassandra (Bigtable) instance exists
         id: cassandra-instance-check
         run: |
@@ -112,8 +109,6 @@ jobs:
 
       - name: Set Cassandra user and password
         run: |
-          gcloud bigtable instances update ${{ env.CASSANDRA_INSTANCE_NAME }} \
-            --add-iam-policy-binding \
-            --member="user:${{ env.CASSANDRA_USERNAME }}" \
-            --role="roles/bigtable.user" \
-            --password="${{ env.CASSANDRA_PASSWORD }}"
+          gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
+            --member="user:${{ env.SQL_USERNAME }}" \
+            --role="roles/bigtable.user"
