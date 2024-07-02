@@ -11,6 +11,7 @@ env:
   DB_NAME: mininet-db
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
+  CASSANDRA_INSTANCE_NAME: mininet-cassandra-instance
 
 jobs:
   setup-infrastructure:
@@ -106,6 +107,5 @@ jobs:
         if: steps.cassandra-instance-check.outputs.exists == 'false'
         run: |
           gcloud bigtable instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
-            --cluster-config=id=cassandra-cluster,zone=${{ env.ZONE }} \
             --display-name="Cassandra Instance" \
-            --instance-type=PRODUCTION
+            --cluster=zone=${{ env.ZONE }},id=cassandra-cluster,num-nodes=3
