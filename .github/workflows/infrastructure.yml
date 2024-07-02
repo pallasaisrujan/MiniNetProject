@@ -4,12 +4,16 @@ on:
   push:
 
 env:
-  PROJECT_ID: your-gcp-project-id
+  PROJECT_ID: mini-net-428116
   REGION: us-central1
   ZONE: us-central1-a
   SQL_INSTANCE_NAME: mininet-sql-instance
   DB_NAME: mininet-db
   CASSANDRA_INSTANCE_NAME: mininet-cassandra-instance
+  SQL_USERNAME: Birkbeck13924706
+  SQL_PASSWORD: Birkbeck@13924706
+  CASSANDRA_USERNAME: Birkbeck13924706
+  CASSANDRA_PASSWORD: Birkbeck@13924706
 
 jobs:
   setup-infrastructure:
@@ -55,7 +59,12 @@ jobs:
           gcloud sql instances create ${{ env.SQL_INSTANCE_NAME }} \
             --database-version=MYSQL_8_0 \
             --tier=db-f1-micro \
-            --region=${{ env.REGION }}
+            --region=${{ env.REGION }} \
+            --root-password=${{ env.SQL_PASSWORD }}
+
+      - name: Create SQL user
+        run: |
+          gcloud sql users create ${{ env.SQL_USERNAME }} --instance=${{ env.SQL_INSTANCE_NAME }} --password=${{ env.SQL_PASSWORD }}
 
       - name: Check if database exists
         id: db-check
@@ -100,3 +109,11 @@ jobs:
             --cluster-config=id=cassandra-cluster,zone=${{ env.ZONE }} \
             --display-name="Cassandra Instance" \
             --instance-type=PRODUCTION
+
+      - name: Set Cassandra user and password
+        run: |
+          gcloud bigtable instances update ${{ env.CASSANDRA_INSTANCE_NAME }} \
+            --add-iam-policy-binding \
+            --member="user:${{ env.CASSANDRA_USERNAME }}" \
+            --role="roles/bigtable.user" \
+            --password="${{ env.CASSANDRA_PASSWORD }}"
