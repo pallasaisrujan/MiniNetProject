@@ -73,10 +73,15 @@ jobs:
         run: |
           gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
 
+      # Cassandra setup steps
+      - name: Enable Bigtable API
+        run: |
+          gcloud services enable bigtable.googleapis.com
+
       - name: Check if Cassandra instance exists
         id: cassandra-instance-check
         run: |
-          if gcloud compute instances describe ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }}; then
+          if gcloud bigtable instances describe ${{ env.CASSANDRA_INSTANCE_NAME }}; then
             echo "Cassandra instance already exists"
             echo "::set-output name=exists::true"
           else
@@ -87,31 +92,8 @@ jobs:
       - name: Create Cassandra instance
         if: steps.cassandra-instance-check.outputs.exists == 'false'
         run: |
-          gcloud compute instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
-            --zone=${{ env.ZONE }} \
-            --machine-type=e2-medium \
-            --image-family=debian-11 \
-            --image-project=debian-cloud \
-            --boot-disk-size=20GB \
-            --scopes=https://www.googleapis.com/auth/cloud-platform
-
-      - name: Set up Cassandra
-        run: |
-          gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
-            sudo apt update &&
-            sudo apt install -y openjdk-11-jdk apt-transport-https gnupg2 &&
-            echo 'deb [arch=amd64] https://downloads.apache.org/cassandra/debian 40x main' | sudo tee /etc/apt/sources.list.d/cassandra.sources.list &&
-            curl https://downloads.apache.org/cassandra/KEYS | sudo apt-key add - &&
-            sudo apt update &&
-            sudo apt install -y cassandra &&
-            sudo systemctl enable cassandra &&
-            sudo systemctl start cassandra &&
-            sudo systemctl status cassandra &&
-            sudo nodetool status
-          "
-
-      - name: Verify Cassandra Setup
-        run: |
-          gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
-            cqlsh -e 'DESC KEYSPACES'
-          "
+          gcloud bigtable instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
+            --cluster=cassandra-cluster \
+            --cluster-zone=${{ env.ZONE }} \
+            --display-name="Cassandra Instance" \
+            --instance-type=DEVELOPMENT
