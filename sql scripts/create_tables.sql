@@ -4,7 +4,7 @@ CREATE TABLE User (
     Username VARCHAR(30) NOT NULL,
     Email VARCHAR(50) NOT NULL,
     Password VARCHAR(20) NOT NULL,
-    SubscriptionType VARCHAR(10) NOT NULL,
+    SubscriptionType VARCHAR(20) NOT NULL,
     City VARCHAR(30),
     Country VARCHAR(30),
     Age INT
@@ -14,7 +14,7 @@ CREATE TABLE User (
 CREATE TABLE Subscription (
     SubscriptionID INT AUTO_INCREMENT PRIMARY KEY,
     UserID INT,
-    PlanName VARCHAR(10) NOT NULL,
+    PlanName VARCHAR(20) NOT NULL,
     Price DECIMAL(5,2) NOT NULL,
     Duration INT NOT NULL,
     FOREIGN KEY (UserID) REFERENCES User(UserID)
