@@ -44,6 +44,10 @@ jobs:
         run: |
           gcloud services enable bigtableadmin.googleapis.com
 
+      - name: Enable Cloud Resource Manager API
+        run: |
+          gcloud services enable cloudresourcemanager.googleapis.com
+
       - name: Wait for API activation
         run: |
           sleep 60  # Wait for 60 seconds to allow the API activation to propagate
