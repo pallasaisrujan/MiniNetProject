@@ -73,12 +73,16 @@ jobs:
         run: |
           gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
 
-      # Cassandra setup steps
-      - name: Enable Bigtable API
+      # Cassandra (Bigtable) setup steps
+      - name: Enable Bigtable Admin API
         run: |
-          gcloud services enable bigtable.googleapis.com
+          gcloud services enable bigtableadmin.googleapis.com
 
-      - name: Check if Cassandra instance exists
+      - name: Wait for API activation
+        run: |
+          sleep 60  # Wait for 60 seconds to allow the API activation to propagate
+
+      - name: Check if Cassandra (Bigtable) instance exists
         id: cassandra-instance-check
         run: |
           if gcloud bigtable instances describe ${{ env.CASSANDRA_INSTANCE_NAME }}; then
@@ -89,17 +93,10 @@ jobs:
             echo "::set-output name=exists::false"
           fi
 
-      - name: Create Cassandra instance
+      - name: Create Cassandra (Bigtable) instance
         if: steps.cassandra-instance-check.outputs.exists == 'false'
         run: |
           gcloud bigtable instances create ${{ env.CASSANDRA_INSTANCE_NAME }} \
-            --cluster=cassandra-cluster \
-            --cluster-zone=${{ env.ZONE }} \
+            --cluster-config=id=cassandra-cluster,zone=${{ env.ZONE }} \
             --display-name="Cassandra Instance" \
-            --instance-type=DEVELOPMENT
-
-      - name: Create Cassandra table
-        run: |
-          gcloud bigtable instances tables create your-table-name \
-            --instance=${{ env.CASSANDRA_INSTANCE_NAME }} \
-            --column-family=cf1
+            --instance-type=PRODUCTION
