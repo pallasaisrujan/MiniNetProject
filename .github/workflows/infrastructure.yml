@@ -9,7 +9,7 @@ env:
   ZONE: us-central1-a
   SQL_INSTANCE_NAME: mininet-sql-instance
   DB_NAME: mininet-db
-  CASSANDRA_INSTANCE_NAME: cassandra-instance
+  CASSANDRA_INSTANCE_NAME: mininet-cassandra-instance
 
 jobs:
   setup-infrastructure:
