@@ -100,8 +100,8 @@ jobs:
           gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
             sudo apt update &&
             sudo apt install -y openjdk-11-jdk apt-transport-https gnupg2 &&
-            wget -q -O - https://www.apache.org/dist/cassandra/KEYS | sudo apt-key add - &&
-            sudo sh -c 'echo \"deb https://downloads.apache.org/cassandra/debian 40x main\" | sudo tee -a /etc/apt/sources.list.d/cassandra.sources.list' &&
+            echo 'deb [arch=amd64] https://downloads.apache.org/cassandra/debian 40x main' | sudo tee /etc/apt/sources.list.d/cassandra.sources.list &&
+            curl https://downloads.apache.org/cassandra/KEYS | sudo apt-key add - &&
             sudo apt update &&
             sudo apt install -y cassandra &&
             sudo systemctl enable cassandra &&
@@ -109,6 +109,7 @@ jobs:
             sudo systemctl status cassandra &&
             sudo nodetool status
           "
+
       - name: Verify Cassandra Setup
         run: |
           gcloud compute ssh ${{ env.CASSANDRA_INSTANCE_NAME }} --zone=${{ env.ZONE }} --command "
