@@ -9,7 +9,6 @@ env:
   ZONE: us-central1-a
   SQL_INSTANCE_NAME: mininet-sql-instance
   DB_NAME: mininet-db
-  CASSANDRA_INSTANCE_NAME: mininet-cassandra-instance
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
 
@@ -110,9 +109,3 @@ jobs:
             --cluster-config=id=cassandra-cluster,zone=${{ env.ZONE }} \
             --display-name="Cassandra Instance" \
             --instance-type=PRODUCTION
-
-      - name: Set Cassandra user and password
-        run: |
-          gcloud projects add-iam-policy-binding ${{ env.PROJECT_ID }} \
-            --member="user:${{ env.SQL_USERNAME }}" \
-            --role="roles/bigtable.user"
