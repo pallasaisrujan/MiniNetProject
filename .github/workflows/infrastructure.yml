@@ -9,7 +9,7 @@ env:
   ZONE: us-central1-a
   SQL_INSTANCE_NAME: mininet-sql-instance
   DB_NAME: mininet-db
-  SQL_USERNAME: Birkbeck13924706
+  SQL_USERNAME: Birkbeck@13924706
   SQL_PASSWORD: Birkbeck@13924706
   CASSANDRA_INSTANCE_NAME: mininet-cassandra-instance
 
