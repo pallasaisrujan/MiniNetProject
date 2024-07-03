@@ -84,13 +84,6 @@ jobs:
         run: |
           gcloud sql users create ${{ env.SQL_USERNAME }} --instance=${{ env.SQL_INSTANCE_NAME }} --password=${{ env.SQL_PASSWORD }}
 
-      - name: Grant privileges to SQL user
-        run: |
-          gcloud sql connect ${{ env.SQL_INSTANCE_NAME }} --user=root --password=root <<EOF
-          GRANT ALL PRIVILEGES ON *.* TO 'Birkbeck13924706'@'%' IDENTIFIED BY 'Birkbeck@13924706';
-          FLUSH PRIVILEGES;
-          EOF
-
       - name: Check if database exists
         id: db-check
         run: |
