@@ -72,6 +72,14 @@ jobs:
             --region=${{ env.REGION }} \
             --root-password=${{ env.SQL_PASSWORD }}
 
+      - name: Wait for SQL instance to be RUNNABLE
+        run: |
+          while [[ $(gcloud sql instances describe ${{ env.SQL_INSTANCE_NAME }} --format="value(state)") != "RUNNABLE" ]]; do
+            echo "Waiting for SQL instance to be RUNNABLE..."
+            sleep 10
+          done
+          echo "SQL instance is RUNNABLE."
+
       - name: Create SQL user
         run: |
           gcloud sql users create ${{ env.SQL_USERNAME }} --instance=${{ env.SQL_INSTANCE_NAME }} --password=${{ env.SQL_PASSWORD }}
