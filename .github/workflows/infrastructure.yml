@@ -70,7 +70,7 @@ jobs:
             --database-version=MYSQL_8_0 \
             --tier=db-f1-micro \
             --region=${{ env.REGION }} \
-            --root-password=${{ env.SQL_PASSWORD }}
+            --root-password=root
 
       - name: Wait for SQL instance to be RUNNABLE
         run: |
@@ -86,7 +86,7 @@ jobs:
 
       - name: Grant privileges to SQL user
         run: |
-          gcloud sql connect ${{ env.SQL_INSTANCE_NAME }} --user=root <<EOF
+          gcloud sql connect ${{ env.SQL_INSTANCE_NAME }} --user=root --password=root <<EOF
           GRANT ALL PRIVILEGES ON *.* TO 'Birkbeck13924706'@'%' IDENTIFIED BY 'Birkbeck@13924706';
           FLUSH PRIVILEGES;
           EOF
