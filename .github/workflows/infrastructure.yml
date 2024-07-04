@@ -120,6 +120,3 @@ jobs:
         run: |
           pip install cassandra-driver
 
-      - name: Run CQL commands
-        run: |
-          python python_scripts/setup_cassandra.py
