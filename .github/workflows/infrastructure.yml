@@ -11,7 +11,7 @@ env:
   DB_NAME: mininet-db
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
-  CASSANDRA_HOST: 127.0.0.1
+  CASSANDRA_HOST: localhost
   CASSANDRA_PORT: 9042
 
 jobs:
@@ -120,3 +120,6 @@ jobs:
         run: |
           pip install cassandra-driver
 
+
+      - name: Keep Cassandra running
+        run: sleep infinity
