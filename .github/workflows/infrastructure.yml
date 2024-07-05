@@ -113,7 +113,7 @@ jobs:
           gcloud compute instances create cassandra-vm \
             --zone=${{ env.ZONE }} \
             --machine-type=e2-medium \
-            --image-family=debian-10 \
+            --image-family=debian-11 \
             --image-project=debian-cloud \
             --boot-disk-size=200GB \
             --tags=http-server,https-server
