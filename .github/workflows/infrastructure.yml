@@ -98,53 +98,45 @@ jobs:
   setup-cassandra:
     runs-on: ubuntu-latest
 
-    services:
-      cassandra:
-        image: cassandra:latest
-        ports:
-          - 9042:9042
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Stop existing containers using port 9042
-        run: |
-          CONTAINER_ID=$(docker ps -q --filter "publish=9042")
-          if [ ! -z "$CONTAINER_ID" ]; then
-            echo "Stopping existing container using port 9042"
-            docker stop $CONTAINER_ID
-          fi
+      - name: Authenticate to Google Cloud
+        id: auth-gcp
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
-      - name: Set up Docker Compose
+      - name: Create GCP VM for Cassandra
         run: |
-          docker-compose -f docker-compose.yml up -d
+          gcloud compute instances create cassandra-vm \
+            --zone=${{ env.ZONE }} \
+            --machine-type=e2-medium \
+            --image-family=debian-9 \
+            --image-project=debian-cloud \
+            --boot-disk-size=10GB \
+            --tags=http-server,https-server
 
-      - name: Wait for Cassandra to be ready
+      - name: Install Docker on VM
         run: |
-          echo "Waiting for Cassandra to be ready..."
-          for i in {1..30}; do
-            if docker exec mininetproject_cassandra_1 cqlsh -e 'describe keyspaces'; then
-              echo "Cassandra is ready!"
-              exit 0
-            fi
-            echo "Waiting for Cassandra to be ready... ($i/30)"
-            sleep 10
-          done
-          echo "Cassandra did not become ready in time."
-          exit 1
-
-      - name: Install Cassandra driver
-        run: |
-          pip install cassandra-driver
-
-      - name: Verify Cassandra Connection
-        run: |
-          python -c "
-          from cassandra.cluster import Cluster
-          from cassandra.auth import PlainTextAuthProvider
-          auth_provider = PlainTextAuthProvider(username='cassandra', password='cassandra')
-          cluster = Cluster(['127.0.0.1'], port=9042, auth_provider=auth_provider)
-          session = cluster.connect()
-          print('Connected to Cassandra')
+          gcloud compute ssh cassandra-vm --zone=${{ env.ZONE }} --command "
+            sudo apt-get update &&
+            sudo apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common &&
+            curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add - &&
+            sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable' &&
+            sudo apt-get update &&
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io &&
+            sudo usermod -aG docker \$USER
           "
+
+      - name: Pull and Run Cassandra Docker Container
+        run: |
+          gcloud compute ssh cassandra-vm --zone=${{ env.ZONE }} --command "
+            sudo docker pull cassandra:latest &&
+            sudo docker run -d --name cassandra -p 9042:9042 cassandra:latest
+          "
+
+      - name: Expose Ports
+        run: |
+          gcloud compute firewall-rules create cassandra-rule --allow tcp:9042 --source-ranges=0.0.0.0/0
