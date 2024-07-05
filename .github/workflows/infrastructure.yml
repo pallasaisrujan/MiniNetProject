@@ -2,6 +2,8 @@ name: Setup Infrastructure
 
 on:
   push:
+    branches:
+      - main
 
 env:
   PROJECT_ID: mini-net-428116
@@ -11,6 +13,7 @@ env:
   DB_NAME: mininet-db
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
+  CLUSTER_NAME: cassandra-cluster
 
 jobs:
   setup-sql:
@@ -108,35 +111,26 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
-      - name: Create GCP VM for Cassandra
+      - name: Configure gcloud
         run: |
-          gcloud compute instances create cassandra-vm \
-            --zone=${{ env.ZONE }} \
-            --machine-type=e2-medium \
-            --image-family=debian-11 \
-            --image-project=debian-cloud \
-            --boot-disk-size=200GB \
-            --tags=http-server,https-server
+          gcloud config set project ${{ env.PROJECT_ID }}
+          gcloud config set compute/zone ${{ env.ZONE }}
 
-      - name: Install Docker on VM
+      - name: Enable required APIs for GKE
         run: |
-          gcloud compute ssh cassandra-vm --zone=${{ env.ZONE }} --command "
-            sudo apt-get update &&
-            sudo apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common &&
-            curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add - &&
-            sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable' &&
-            sudo apt-get update &&
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io &&
-            sudo usermod -aG docker \$USER
-          "
+          gcloud services enable container.googleapis.com
+          gcloud services enable compute.googleapis.com
 
-      - name: Pull and Run Cassandra Docker Container
+      - name: Create GKE cluster
         run: |
-          gcloud compute ssh cassandra-vm --zone=${{ env.ZONE }} --command "
-            sudo docker pull cassandra:latest &&
-            sudo docker run -d --name cassandra -p 9042:9042 cassandra:latest
-          "
+          gcloud container clusters create ${{ env.CLUSTER_NAME }} \
+            --zone ${{ env.ZONE }} \
+            --num-nodes 3
 
-      - name: Expose Ports
+      - name: Get GKE credentials
         run: |
-          gcloud compute firewall-rules create cassandra-rule --allow tcp:9042 --source-ranges=0.0.0.0/0
+          gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.ZONE }}
+
+      - name: Set up Kubernetes resources
+        run: |
+          kubectl apply -f kubernetes/cassandra-deployment.yml
