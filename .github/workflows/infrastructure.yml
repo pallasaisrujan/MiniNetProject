@@ -98,25 +98,31 @@ jobs:
   setup-cassandra:
     runs-on: ubuntu-latest
 
-    services:
-      cassandra:
-        image: cassandra:latest
-        ports:
-          - 9042:9042
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set up Docker Compose
+        run: |
+          docker-compose -f docker-compose.yml up -d
+
       - name: Wait for Cassandra to be ready
         run: |
           echo "Waiting for Cassandra to be ready..."
-          sleep 60  # Wait for 60 seconds to ensure Cassandra is fully started
+          while ! nc -z localhost 9042; do   
+            sleep 1 # wait for 1 second before check again
+          done
+          echo "Cassandra is ready."
 
       - name: Install Cassandra driver
         run: |
           pip install cassandra-driver
 
-      - name: Keep Cassandra running
+      - name: Verify Cassandra Connection
         run: |
-         echo "Cassandra is running in the background."
+          python -c "
+          from cassandra.cluster import Cluster
+          cluster = Cluster(['localhost'])
+          session = cluster.connect()
+          print('Connected to Cassandra')
+          "

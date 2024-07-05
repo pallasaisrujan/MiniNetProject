@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  cassandra:
+    image: cassandra:latest
+    ports:
+      - 9042:9042
+    networks:
+      - cassandra-network
+
+networks:
+  cassandra-network:
+    driver: bridge
