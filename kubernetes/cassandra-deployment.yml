@@ -36,6 +36,7 @@ kind: Service
 metadata:
   name: cassandra
 spec:
+  type: LoadBalancer
   ports:
   - port: 9042
     targetPort: 9042
