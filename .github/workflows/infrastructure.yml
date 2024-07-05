@@ -98,6 +98,12 @@ jobs:
   setup-cassandra:
     runs-on: ubuntu-latest
 
+    services:
+      cassandra:
+        image: cassandra:latest
+        ports:
+          - 9042:9042
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -109,10 +115,16 @@ jobs:
       - name: Wait for Cassandra to be ready
         run: |
           echo "Waiting for Cassandra to be ready..."
-          while ! nc -z localhost 9042; do   
-            sleep 1 # wait for 1 second before check again
+          for i in {1..30}; do
+            if nc -z localhost 9042; then
+              echo "Cassandra is ready!"
+              exit 0
+            fi
+            echo "Waiting for Cassandra to be ready... ($i/30)"
+            sleep 10
           done
-          echo "Cassandra is ready."
+          echo "Cassandra did not become ready in time."
+          exit 1
 
       - name: Install Cassandra driver
         run: |
