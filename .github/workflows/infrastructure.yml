@@ -139,10 +139,20 @@ jobs:
             --num-nodes 3 \
             --enable-ip-alias
 
+      - name: Add Google Cloud SDK repository
+        run: |
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+          sudo apt-get install -y apt-transport-https ca-certificates gnupg
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+          sudo apt-get update
+
       - name: Install gke-gcloud-auth-plugin
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gke-gcloud-auth-plugin
+          sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+
+      - name: Verify gke-gcloud-auth-plugin installation
+        run: |
+          gke-gcloud-auth-plugin --version
 
       - name: Get GKE credentials
         run: |
