@@ -1,12 +1,16 @@
 version: '3.8'
-
 services:
   cassandra:
     image: cassandra:latest
     ports:
-      - 9042:9042
+      - "9042:9042"
     networks:
       - cassandra-network
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 networks:
   cassandra-network:
