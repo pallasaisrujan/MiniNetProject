@@ -113,9 +113,9 @@ jobs:
           gcloud compute instances create cassandra-vm \
             --zone=${{ env.ZONE }} \
             --machine-type=e2-medium \
-            --image-family=debian-9 \
+            --image-family=debian-10 \
             --image-project=debian-cloud \
-            --boot-disk-size=10GB \
+            --boot-disk-size=200GB \
             --tags=http-server,https-server
 
       - name: Install Docker on VM
