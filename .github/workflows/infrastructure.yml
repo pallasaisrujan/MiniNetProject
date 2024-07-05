@@ -119,4 +119,4 @@ jobs:
 
       - name: Keep Cassandra running
         run: |
-          while true; do sleep 60; done
+         echo "Cassandra is running in the background."
