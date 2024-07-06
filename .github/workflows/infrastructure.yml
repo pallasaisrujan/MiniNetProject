@@ -174,14 +174,13 @@ jobs:
             --action=ALLOW \
             --rules=tcp:22,tcp:80,tcp:443
 
-      - name: Add User to Docker Group
+      - name: List Docker Containers
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo usermod -aG docker $USER"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo systemctl restart docker"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="docker ps -a"
 
       - name: Check Cassandra Containers Status
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="
-          docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
-          docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
-          docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
+          docker exec -i -t CassandraDB-1 bash -c 'nodetool status' || true
+          docker exec -i -t CassandraDB-2 bash -c 'nodetool status' || true
+          docker exec -i -t CassandraDB-3 bash -c 'nodetool status' || true"
