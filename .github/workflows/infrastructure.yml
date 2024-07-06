@@ -136,19 +136,25 @@ jobs:
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
             --boot-disk-size=50GB \
-            --tags=http-server,https-server \
-            --metadata startup-script='#! /bin/bash
-              sudo apt-get update
-              sudo apt-get install -y docker.io
-              sudo systemctl enable docker
-              sudo systemctl start docker
-              docker run --name CassandraDB-1 -d cassandra:3.11
-              sleep 60
-              docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11
-              sleep 60
-              docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11'
+            --tags=http-server,https-server
 
-      - name: Wait for VM and Docker setup
+      - name: Wait for VM to be ready
+        run: sleep 60
+
+      - name: Install Docker and Run Cassandra Containers
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo systemctl enable docker
+            sudo systemctl start docker
+            docker run --name CassandraDB-1 -d cassandra:3.11
+            sleep 60
+            docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11
+            sleep 60
+            docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11"
+
+      - name: Wait for Docker setup
         run: sleep 60
 
       - name: Check if firewall rule exists
@@ -172,15 +178,11 @@ jobs:
             --action=ALLOW \
             --rules=tcp:22,tcp:80,tcp:443
 
-      - name: Add User to Docker Group
-        run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo usermod -aG docker $USER"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo systemctl restart docker"
-
       - name: Check CassandraDB status
         run: |
-          sleep 60 
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker ps -a"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker exec -i -t CassandraDB-1 bash -c 'nodetool status'"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker exec -i -t CassandraDB-2 bash -c 'nodetool status'"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
+            sleep 60
+            docker ps -a
+            docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
+            docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
+            docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
