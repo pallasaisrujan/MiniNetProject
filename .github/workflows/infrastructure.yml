@@ -1,4 +1,4 @@
-name: Setup Infrastructure
+name: Setup Infrastructure and Deploy Cassandra
 
 on:
   push:
@@ -16,7 +16,7 @@ env:
   CLUSTER_NAME: cassandra-cluster
 
 jobs:
-  setup-sql:
+  setup-infrastructure:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,6 +33,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ env.PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin'
 
       - name: Configure gcloud
         run: |
@@ -40,7 +41,7 @@ jobs:
 
       - name: Enable required APIs
         run: |
-          gcloud services enable sqladmin.googleapis.com compute.googleapis.com cloudresourcemanager.googleapis.com
+          gcloud services enable sqladmin.googleapis.com compute.googleapis.com cloudresourcemanager.googleapis.com container.googleapis.com
 
       - name: Wait for API activation
         run: sleep 60
@@ -93,33 +94,6 @@ jobs:
         run: |
           gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
 
-  setup-cassandra:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Authenticate to Google Cloud
-        id: auth-gcp
-        uses: google-github-actions/auth@v0
-        with:
-          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          install_components: 'gke-gcloud-auth-plugin'
-
-      - name: Configure gcloud
-        run: |
-          gcloud config set compute/zone ${{ env.ZONE }}
-
-      - name: Enable GKE API
-        run: |
-          gcloud services enable container.googleapis.com
-
       - name: Check if GKE cluster exists
         id: gke-cluster-check
         run: |
@@ -143,6 +117,17 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.ZONE }}
 
+      - name: Create firewall rule for GKE
+        run: |
+          gcloud compute firewall-rules create allow-all-to-gke \
+            --direction=INGRESS \
+            --priority=1000 \
+            --network=default \
+            --action=ALLOW \
+            --rules=tcp:9042 \
+            --source-ranges=0.0.0.0/0 \
+            --target-tags=gke-${{ env.CLUSTER_NAME }}-node
+
       - name: Deploy Cassandra to GKE
         run: |
           kubectl apply -f kubernetes/cassandra-deployment.yml
@@ -150,3 +135,13 @@ jobs:
       - name: Wait for Cassandra to be ready
         run: |
           kubectl wait --for=condition=ready pod -l app=cassandra --timeout=600s
+
+      - name: Get Cassandra external IP
+        run: |
+          external_ip=""
+          while [ -z $external_ip ]; do
+            echo "Waiting for external IP..."
+            external_ip=$(kubectl get svc cassandra --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
+            [ -z "$external_ip" ] && sleep 10
+          done
+          echo "Cassandra is externally available at $external_ip:9042"

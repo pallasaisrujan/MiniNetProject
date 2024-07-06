@@ -18,6 +18,9 @@ spec:
         image: cassandra:latest
         ports:
         - containerPort: 9042
+        env:
+        - name: CASSANDRA_BROADCAST_ADDRESS
+          value: "0.0.0.0"
         volumeMounts:
         - name: cassandra-data
           mountPath: /var/lib/cassandra
