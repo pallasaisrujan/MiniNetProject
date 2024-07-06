@@ -173,22 +173,11 @@ jobs:
             --source-ranges=0.0.0.0/0 \
             --target-tags=gke-${{ env.CLUSTER_NAME }}-node
 
-      - name: Scale down Cassandra StatefulSet
-        run: |
-          kubectl scale statefulset cassandra --replicas=0 || echo "No StatefulSet found to scale down"
-
-      - name: Delete Cassandra StatefulSet
-        run: |
-          kubectl delete statefulset cassandra || echo "No StatefulSet found to delete"
-
-      - name: Apply updated StatefulSet configuration
+      - name: Apply Cassandra StatefulSet
         run: kubectl apply -f kubernetes/cassandra-deployment.yml
-
-      - name: Scale up Cassandra StatefulSet
-        run: kubectl scale statefulset cassandra --replicas=1
 
       - name: Wait for Cassandra to be ready
         run: kubectl wait --for=condition=ready pod -l app=cassandra --timeout=600s
 
-      - name: Get Cassandra pods
-        run: kubectl get pods -l app=cassandra -o wide
+      - name: Create Keyspace
+        run: kubectl exec -it cassandra-0 -- cqlsh -e "CREATE KEYSPACE IF NOT EXISTS my_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};"
