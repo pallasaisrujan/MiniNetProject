@@ -14,6 +14,7 @@ env:
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
+  FIREWALL_RULE: allow-http-https
 
 jobs:
   setup-sql:
@@ -151,11 +152,31 @@ jobs:
       - name: Wait for VM and Docker setup
         run: sleep 180
 
-      - name: Create firewall rule for VM
+      - name: Check if firewall rule exists
+        id: firewall-rule-check
         run: |
-          gcloud compute firewall-rules create allow-http-https \
+          if gcloud compute firewall-rules describe ${{ env.FIREWALL_RULE }}; then
+            echo "Firewall rule already exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Firewall rule does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create firewall rule for VM
+        if: steps.firewall-rule-check.outputs.exists == 'false'
+        run: |
+          gcloud compute firewall-rules create ${{ env.FIREWALL_RULE }} \
             --direction=INGRESS \
             --priority=1000 \
             --network=default \
             --action=ALLOW \
             --rules=tcp:80,tcp:443
+
+      - name: Inspect Cassandra Containers
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="
+          docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1 CassandraDB-2 CassandraDB-3
+          docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
+          docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
+          docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
