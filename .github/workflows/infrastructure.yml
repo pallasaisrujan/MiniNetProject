@@ -173,24 +173,13 @@ jobs:
             --source-ranges=0.0.0.0/0 \
             --target-tags=gke-${{ env.CLUSTER_NAME }}-node
 
-      - name: Check if Cassandra StatefulSet exists
-        id: cassandra-statefulset-check
-        run: |
-          if kubectl get statefulset cassandra; then
-            echo "Cassandra StatefulSet exists"
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "Cassandra StatefulSet does not exist"
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Scale down Cassandra StatefulSet
-        if: steps.cassandra-statefulset-check.outputs.exists == 'true'
-        run: kubectl scale statefulset cassandra --replicas=0
+        run: |
+          kubectl scale statefulset cassandra --replicas=0 || echo "No StatefulSet found to scale down"
 
       - name: Delete Cassandra StatefulSet
-        if: steps.cassandra-statefulset-check.outputs.exists == 'true'
-        run: kubectl delete statefulset cassandra
+        run: |
+          kubectl delete statefulset cassandra || echo "No StatefulSet found to delete"
 
       - name: Apply updated StatefulSet configuration
         run: kubectl apply -f kubernetes/cassandra-deployment.yml
@@ -203,13 +192,3 @@ jobs:
 
       - name: Get Cassandra pods
         run: kubectl get pods -l app=cassandra -o wide
-
-      - name: Get Cassandra external IP
-        run: |
-          external_ip=""
-          while [ -z $external_ip ]; do
-            echo "Waiting for external IP..."
-            external_ip=$(kubectl get svc cassandra --template="{{range .status.loadBalancer.ingress}}{{.ip}}{{end}}")
-            [ -z "$external_ip" ] && sleep 10
-          done
-          echo "Cassandra is externally available at $external_ip:9042"
