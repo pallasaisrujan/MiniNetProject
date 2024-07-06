@@ -115,7 +115,19 @@ jobs:
           gcloud config set project ${{ env.PROJECT_ID }}
           gcloud config set compute/zone ${{ env.ZONE }}
 
+      - name: Check if VM exists
+        id: vm-check
+        run: |
+          if gcloud compute instances describe ${{ env.VM_NAME }} --zone=${{ env.ZONE }}; then
+            echo "VM already exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "VM does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create VM for Cassandra
+        if: steps.vm-check.outputs.exists == 'false'
         run: |
           gcloud compute instances create ${{ env.VM_NAME }} \
             --zone=${{ env.ZONE }} \
