@@ -173,13 +173,26 @@ jobs:
             --source-ranges=0.0.0.0/0 \
             --target-tags=gke-${{ env.CLUSTER_NAME }}-node
 
+      - name: Scale down Cassandra StatefulSet
+        run: kubectl scale statefulset cassandra --replicas=0
+
+      - name: Delete Cassandra StatefulSet
+        run: kubectl delete statefulset cassandra
+
+      - name: Apply updated StatefulSet configuration
+        run: kubectl apply -f kubernetes/cassandra-statefulset.yml
+
+      - name: Scale up Cassandra StatefulSet
+        run: kubectl scale statefulset cassandra --replicas=1
+
       - name: Deploy Cassandra to GKE
-        run: |
-          kubectl apply -f kubernetes/cassandra-deployment.yml
+        run: kubectl apply -f kubernetes/cassandra-deployment.yml
 
       - name: Wait for Cassandra to be ready
-        run: |
-          kubectl wait --for=condition=ready pod -l app=cassandra --timeout=600s
+        run: kubectl wait --for=condition=ready pod -l app=cassandra --timeout=600s
+
+      - name: Get Cassandra pods
+        run: kubectl get pods -l app=cassandra -o wide
 
       - name: Get Cassandra external IP
         run: |
