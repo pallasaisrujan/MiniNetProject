@@ -150,7 +150,19 @@ jobs:
         run: |
           gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --zone ${{ env.ZONE }}
 
+      - name: Check if firewall rule exists
+        id: firewall-rule-check
+        run: |
+          if gcloud compute firewall-rules describe allow-all-to-gke; then
+            echo "Firewall rule already exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Firewall rule does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create firewall rule for GKE
+        if: steps.firewall-rule-check.outputs.exists == 'false'
         run: |
           gcloud compute firewall-rules create allow-all-to-gke \
             --direction=INGRESS \
