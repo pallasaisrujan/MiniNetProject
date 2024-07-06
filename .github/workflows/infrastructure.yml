@@ -150,12 +150,12 @@ jobs:
               docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11'
 
       - name: Wait for VM and Docker setup
-        run: sleep 180
+        run: sleep 45
 
       - name: Add SSH key to VM
         run: |
           gcloud compute instances add-metadata ${{ env.VM_NAME }} \
-            --metadata-from-file ssh-keys=~.ssh/gcp_key.pub
+            --metadata-from-file ssh-keys=.ssh/gcp_key.pub
 
       - name: Check if firewall rule exists
         id: firewall-rule-check
@@ -176,7 +176,7 @@ jobs:
             --priority=1000 \
             --network=default \
             --action=ALLOW \
-            --rules=tcp:80,tcp:443
+            --rules=tcp:22,tcp:80,tcp:443
 
       - name: Inspect Cassandra Containers
         run: |
