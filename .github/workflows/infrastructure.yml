@@ -137,6 +137,7 @@ jobs:
             --image-project=ubuntu-os-cloud \
             --boot-disk-size=50GB \
             --tags=http-server,https-server \
+            --metadata-from-file ssh-keys=.ssh/gcp_key.pub \
             --metadata startup-script='#! /bin/bash
               sudo apt-get update
               sudo apt-get install -y docker.io
@@ -173,10 +174,13 @@ jobs:
             --action=ALLOW \
             --rules=tcp:22,tcp:80,tcp:443
 
+      - name: Add User to Docker Group
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo usermod -aG docker $USER"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo systemctl restart docker"
+
       - name: Check Cassandra Containers Status
         run: |
-          sleep 60
-          gcloud compute instances describe ${{ env.VM_NAME }} --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="
           docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
           docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
