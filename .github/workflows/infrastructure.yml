@@ -180,4 +180,6 @@ jobs:
         run: kubectl wait --for=condition=ready pod -l app=cassandra --timeout=600s
 
       - name: Create Keyspace
-        run: kubectl exec -it cassandra-0 -- cqlsh -e "CREATE KEYSPACE IF NOT EXISTS my_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};"
+        run: |
+          KEYSPACE_QUERY="CREATE KEYSPACE IF NOT EXISTS my_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};"
+          kubectl exec -it cassandra-0 -- cqlsh -e "$KEYSPACE_QUERY"
