@@ -14,7 +14,7 @@ env:
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
-  FIREWALL_RULE: allow-http-https
+  FIREWALL_RULE: allow-all
 
 jobs:
   setup-sql:
@@ -137,11 +137,9 @@ jobs:
             --image-project=ubuntu-os-cloud \
             --boot-disk-size=50GB \
             --tags=http-server,https-server \
-            --metadata-from-file ssh-keys=.ssh/gcp_key.pub \
             --metadata startup-script='#! /bin/bash
               sudo apt-get update
               sudo apt-get install -y docker.io
-              sudo usermod -aG docker $USER
               sudo systemctl enable docker
               sudo systemctl start docker
               docker run --name CassandraDB-1 -d cassandra:3.11
@@ -174,13 +172,15 @@ jobs:
             --action=ALLOW \
             --rules=tcp:22,tcp:80,tcp:443
 
-      - name: List Docker Containers
+      - name: Add User to Docker Group
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="docker ps -a"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo usermod -aG docker $USER"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo systemctl restart docker"
 
-      - name: Check Cassandra Containers Status
+      - name: Check CassandraDB status
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="
-          docker exec -i -t CassandraDB-1 bash -c 'nodetool status' || true
-          docker exec -i -t CassandraDB-2 bash -c 'nodetool status' || true
-          docker exec -i -t CassandraDB-3 bash -c 'nodetool status' || true"
+          sleep 60 
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker ps -a"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker exec -i -t CassandraDB-1 bash -c 'nodetool status'"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker exec -i -t CassandraDB-2 bash -c 'nodetool status'"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
