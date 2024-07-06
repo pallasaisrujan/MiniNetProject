@@ -14,7 +14,7 @@ env:
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
-  FIREWALL_RULE: allow-all
+  FIREWALL_RULE: allow-all-http-https-ports
 
 jobs:
   setup-sql:
@@ -153,6 +153,7 @@ jobs:
             docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11
             sleep 60
             docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11"
+            docker ps -a
 
       - name: Wait for Docker setup
         run: sleep 60
