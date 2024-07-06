@@ -176,13 +176,15 @@ jobs:
             --priority=1000 \
             --network=default \
             --action=ALLOW \
-            --rules=tcp:22,tcp:80,tcp:443
+            --rules=tcp:22,tcp:80,tcp:443,tcp:9042
 
       - name: Check CassandraDB status
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
-            sleep 60
-            docker ps -a
-            docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
-            docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
-            docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
+          for i in {1..5}; do
+            gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
+              sleep 60
+              docker ps -a
+              docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
+              docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
+              docker exec -i -t CassandraDB-3 bash -c 'nodetool status'" && break || sleep 30
+          done
