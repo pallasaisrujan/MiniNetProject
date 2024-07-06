@@ -181,5 +181,5 @@ jobs:
 
       - name: Create Keyspace
         run: |
-          KEYSPACE_QUERY="CREATE KEYSPACE IF NOT EXISTS my_keyspace WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};"
+          KEYSPACE_QUERY="CREATE KEYSPACE IF NOT EXISTS mini-net WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};"
           kubectl exec -it cassandra-0 -- cqlsh -e "$KEYSPACE_QUERY"
