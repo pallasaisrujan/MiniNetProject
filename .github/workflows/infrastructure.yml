@@ -152,11 +152,6 @@ jobs:
       - name: Wait for VM and Docker setup
         run: sleep 45
 
-      - name: Add SSH key to VM
-        run: |
-          gcloud compute instances add-metadata ${{ env.VM_NAME }} \
-            --metadata-from-file ssh-keys=.ssh/gcp_key.pub
-
       - name: Check if firewall rule exists
         id: firewall-rule-check
         run: |
@@ -178,10 +173,9 @@ jobs:
             --action=ALLOW \
             --rules=tcp:22,tcp:80,tcp:443
 
-      - name: Inspect Cassandra Containers
+      - name: Check Cassandra Containers Status
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command="
-          docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1 CassandraDB-2 CassandraDB-3
           docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
           docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
           docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
