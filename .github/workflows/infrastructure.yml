@@ -16,7 +16,7 @@ env:
   CLUSTER_NAME: cassandra-cluster
 
 jobs:
-  setup-infrastructure:
+  setup-sql:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,19 +29,22 @@ jobs:
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          project_id: ${{ env.PROJECT_ID }}
-          install_components: 'gke-gcloud-auth-plugin'
-
       - name: Configure gcloud
         run: |
+          gcloud config set project ${{ env.PROJECT_ID }}
           gcloud config set compute/zone ${{ env.ZONE }}
 
-      - name: Enable required APIs
+      - name: Enable Cloud SQL Admin API
         run: |
-          gcloud services enable sqladmin.googleapis.com compute.googleapis.com cloudresourcemanager.googleapis.com container.googleapis.com
+          gcloud services enable sqladmin.googleapis.com
+
+      - name: Enable Compute Engine API
+        run: |
+          gcloud services enable compute.googleapis.com
+
+      - name: Enable Cloud Resource Manager API
+        run: |
+          gcloud services enable cloudresourcemanager.googleapis.com
 
       - name: Wait for API activation
         run: sleep 60
@@ -93,6 +96,36 @@ jobs:
         if: steps.db-check.outputs.exists == 'false'
         run: |
           gcloud sql databases create ${{ env.DB_NAME }} --instance=${{ env.SQL_INSTANCE_NAME }}
+
+  setup-cassandra:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        id: auth-gcp
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin'
+
+      - name: Configure gcloud
+        run: |
+          gcloud config set compute/zone ${{ env.ZONE }}
+
+      - name: Enable required APIs
+        run: |
+          gcloud services enable container.googleapis.com
+
+      - name: Wait for API activation
+        run: sleep 60
 
       - name: Check if GKE cluster exists
         id: gke-cluster-check
