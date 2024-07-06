@@ -152,6 +152,11 @@ jobs:
       - name: Wait for VM and Docker setup
         run: sleep 180
 
+      - name: Add SSH key to VM
+        run: |
+          gcloud compute instances add-metadata ${{ env.VM_NAME }} \
+            --metadata-from-file ssh-keys=~/.ssh/gcp_key.pub
+
       - name: Check if firewall rule exists
         id: firewall-rule-check
         run: |
