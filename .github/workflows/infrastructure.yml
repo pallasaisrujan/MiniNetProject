@@ -136,7 +136,7 @@ jobs:
             --machine-type=e2-medium \
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
-            --boot-disk-size=210GB \
+            --boot-disk-size=50GB \
             --tags=http-server,https-server
 
       - name: Wait for VM creation
@@ -210,13 +210,13 @@ jobs:
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
             echo 'Starting Docker and Cassandra setup...';
             echo 'Pulling Cassandra image...';
-            docker run --name CassandraDB-1 -d cassandra:3.11;
+            docker run --name CassandraDB-1 --network host -d cassandra:3.11;
             echo 'Waiting for CassandraDB-1 to start...';
             sleep 30;
-            docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11;
+            docker run --name CassandraDB-2 --network host -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-2 to start...';
             sleep 30;
-            docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11;
+            docker run --name CassandraDB-3 --network host -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-3 to start...';
             sleep 30;
             echo 'Cassandra containers:';
