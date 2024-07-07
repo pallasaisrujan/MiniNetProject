@@ -188,26 +188,29 @@ jobs:
           gcloud compute instances add-metadata ${{ env.VM_NAME }} \
             --metadata-from-file ssh-keys=${{ env.SSH_KEY_PATH }}.pub
 
-      - name: Add User to Docker Group
+      - name: Install Docker and create docker group
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo usermod -aG docker $USER"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo systemctl restart docker"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "
+            sudo apt-get update;
+            sudo apt-get install -y docker.io;
+            sudo groupadd docker || true;
+            sudo usermod -aG docker $USER;
+            sudo systemctl restart docker"
 
-      - name: SSH into VM and set up Docker and Cassandra
+      - name: SSH into VM and set up Cassandra
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
             echo 'Starting Docker and Cassandra setup...';
-            sudo apt-get update;
-            sudo apt-get install -y docker.io;
-            sudo systemctl enable docker;
-            sudo systemctl start docker;
             echo 'Pulling Cassandra image...';
             docker run --name CassandraDB-1 -d cassandra:3.11;
             echo 'Waiting for CassandraDB-1 to start...';
+            sleep 30;
             docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-2 to start...';
+            sleep 30;
             docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-3 to start...';
+            sleep 30;
             echo 'Cassandra containers:';
             docker ps -a;
             echo 'Checking nodetool status for CassandraDB-1...';
