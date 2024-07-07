@@ -196,17 +196,23 @@ jobs:
       - name: SSH into VM and set up Docker and Cassandra
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
+            echo 'Starting Docker and Cassandra setup...';
             sudo apt-get update;
             sudo apt-get install -y docker.io;
             sudo systemctl enable docker;
             sudo systemctl start docker;
+            echo 'Pulling Cassandra image...';
             docker run --name CassandraDB-1 -d cassandra:3.11;
-            sleep 30;
+            echo 'Waiting for CassandraDB-1 to start...';
             docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11;
-            sleep 30;
+            echo 'Waiting for CassandraDB-2 to start...';
             docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11;
-            sleep 30;
+            echo 'Waiting for CassandraDB-3 to start...';
+            echo 'Cassandra containers:';
             docker ps -a;
+            echo 'Checking nodetool status for CassandraDB-1...';
             docker exec -i -t CassandraDB-1 bash -c 'nodetool status';
+            echo 'Checking nodetool status for CassandraDB-2...';
             docker exec -i -t CassandraDB-2 bash -c 'nodetool status';
+            echo 'Checking nodetool status for CassandraDB-3...';
             docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
