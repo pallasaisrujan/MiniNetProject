@@ -136,7 +136,7 @@ jobs:
             --machine-type=e2-medium \
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
-            --boot-disk-size=50GB \
+            --boot-disk-size=200GB \
             --tags=http-server,https-server
 
       - name: Wait for VM creation
@@ -197,22 +197,23 @@ jobs:
             sudo usermod -aG docker $USER;
             sudo systemctl restart docker"
 
-      - name: SSH into VM and delete existing Cassandra container
+      - name: SSH into VM and delete existing Cassandra containers
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
-            echo 'Deleting existing Cassandra container if it exists...';
-            docker rm -f CassandraDB-1 || true;"
+            echo 'Deleting existing Cassandra containers if they exist...';
+            docker rm -f CassandraDB-1 || true"
 
       - name: SSH into VM and set up Cassandra
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
             echo 'Starting Docker and Cassandra setup...';
             echo 'Pulling Cassandra image...';
-            docker run --name CassandraDB-1 --network host -d cassandra:3.11;
+            docker run --name CassandraDB-1 -d -p 9042:9042 -p 7000:7000 -p 7001:7001 -p 7199:7199 cassandra:3.11;
             echo 'Waiting for CassandraDB-1 to start...';
             sleep 30;
             echo 'Cassandra container:';
             docker ps -a;
             echo 'Checking IP address for CassandraDB container...';
-            echo 'CassandraDB-1 IP:';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;"
+            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;
+            echo 'Checking nodetool status for CassandraDB-1...';
+            docker exec -i -t CassandraDB-1 bash -c 'nodetool status'"
