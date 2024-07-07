@@ -214,8 +214,8 @@ jobs:
             echo 'Cassandra containers:';
             docker ps -a;
             echo 'Inspecting network details for CassandraDB-1...';
-            docker inspect CassandraDB-1 --format='{{json .NetworkSettings.Networks}}';
+            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;
             echo 'Inspecting network details for CassandraDB-2...';
-            docker inspect CassandraDB-2 --format='{{json .NetworkSettings.Networks}}';
+            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-2;
             echo 'Inspecting network details for CassandraDB-3...';
-            docker inspect CassandraDB-3 --format='{{json .NetworkSettings.Networks}}'"
+            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-3;"
