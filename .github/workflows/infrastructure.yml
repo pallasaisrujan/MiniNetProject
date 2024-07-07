@@ -22,11 +22,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Authenticate to Google Cloud
         id: auth-gcp
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v0
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
@@ -103,11 +103,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Authenticate to Google Cloud
         id: auth-gcp
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v0
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
@@ -136,10 +136,9 @@ jobs:
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
             --boot-disk-size=50GB \
-            --tags=http-server,https-server \
-            --metadata-from-file ssh-keys=.ssh/id_ed25519.pub
+            --tags=http-server,https-server
 
-      - name: Wait for VM to be ready
+      - name: Wait for VM creation
         run: sleep 60
 
       - name: Check if firewall rule exists
@@ -163,8 +162,11 @@ jobs:
             --action=ALLOW \
             --rules=tcp:80,tcp:443
 
-      - name: Setup Docker and Cassandra
-        id: setup-docker-cassandra
+      - name: Add SSH Key to VM
+        run: |
+          gcloud compute os-login ssh-keys add --key-file=.ssh/gcp_key.pub
+
+      - name: SSH into VM and set up Docker and Cassandra
         uses: google-github-actions/ssh-compute@v1
         with:
           instance_name: ${{ env.VM_NAME }}
@@ -181,14 +183,6 @@ jobs:
             docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11
             sleep 60
             docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11
-
-      - name: Verify Cassandra Setup
-        uses: google-github-actions/ssh-compute@v1
-        with:
-          instance_name: ${{ env.VM_NAME }}
-          zone: ${{ env.ZONE }}
-          ssh_private_key: '${{ secrets.GCP_SSH_PRIVATE_KEY }}'
-          command: |
             sleep 60
             docker ps -a
             docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
