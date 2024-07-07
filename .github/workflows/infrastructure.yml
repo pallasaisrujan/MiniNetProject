@@ -136,7 +136,7 @@ jobs:
             --machine-type=e2-medium \
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
-            --boot-disk-size=50GB \
+            --boot-disk-size=200GB \
             --tags=http-server,https-server
 
       - name: Wait for VM creation
