@@ -197,12 +197,11 @@ jobs:
             sudo usermod -aG docker $USER;
             sudo systemctl restart docker"
 
-      - name: SSH into VM and delete existing Cassandra containers
+      - name: SSH into VM and delete existing Cassandra container
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
-            echo 'Deleting existing Cassandra containers if they exist...';
-            docker rm -f CassandraDB-1 || true;
-            docker rm -f CassandraDB-2 || true;
+            echo 'Deleting existing Cassandra container if it exists...';
+            docker rm -f CassandraDB-1 || true;"
 
       - name: SSH into VM and set up Cassandra
         run: |
@@ -212,14 +211,8 @@ jobs:
             docker run --name CassandraDB-1 --network host -d cassandra:3.11;
             echo 'Waiting for CassandraDB-1 to start...';
             sleep 30;
-            docker run --name CassandraDB-2 --network host -d --link CassandraDB-1:cassandra cassandra:3.11;
-            echo 'Waiting for CassandraDB-2 to start...';
-            sleep 30;
-            echo 'Cassandra containers:';
+            echo 'Cassandra container:';
             docker ps -a;
-            echo 'Checking IP addresses for CassandraDB containers...';
+            echo 'Checking IP address for CassandraDB container...';
             echo 'CassandraDB-1 IP:';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;
-            echo 'CassandraDB-2 IP:';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-2;
-
+            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;"
