@@ -15,7 +15,8 @@ env:
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
   FIREWALL_RULE: allow-all
-  SSH_KEY_PATH: .ssh/gcp_key
+  SSH_PRIVATE_KEY_PATH: .ssh/gcp_key
+  SSH_PUBLIC_KEY_PATH: .ssh/gcp_key.pub
 
 jobs:
   setup-sql:
@@ -185,12 +186,14 @@ jobs:
 
       - name: Add SSH Key to VM
         run: |
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ${{ env.SSH_PRIVATE_KEY_PATH }}
+          echo "${{ secrets.GCP_SSH_PUBLIC_KEY }}" > ${{ env.SSH_PUBLIC_KEY_PATH }}
           gcloud compute instances add-metadata ${{ env.VM_NAME }} \
-            --metadata-from-file ssh-keys=${{ env.SSH_KEY_PATH }}.pub
+            --metadata-from-file ssh-keys=${{ env.SSH_PUBLIC_KEY_PATH }}
 
       - name: Install Docker and create docker group
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --ssh-key-file=${{ env.SSH_PRIVATE_KEY_PATH }} --command "
             sudo apt-get update;
             sudo apt-get install -y docker.io;
             sudo groupadd docker || true;
@@ -199,13 +202,13 @@ jobs:
 
       - name: SSH into VM and delete existing Cassandra containers
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --ssh-key-file=${{ env.SSH_PRIVATE_KEY_PATH }} --command "
             echo 'Deleting existing Cassandra containers if they exist...';
             docker rm -f CassandraDB-1 || true"
 
       - name: SSH into VM and set up Cassandra
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --ssh-key-file=${{ env.SSH_PRIVATE_KEY_PATH }} --command "
             echo 'Starting Docker and Cassandra setup...';
             echo 'Pulling Cassandra image...';
             docker run --name CassandraDB-1 -d -p 9042:9042 -p 7000:7000 -p 7001:7001 -p 7199:7199 cassandra:3.11;
