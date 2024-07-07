@@ -164,7 +164,16 @@ jobs:
 
       - name: Add SSH Key to VM
         run: |
-          gcloud compute os-login ssh-keys add --key-file=.ssh/gcp_key.pub
+          gcloud compute instances add-metadata ${{ env.VM_NAME }} \
+            --metadata-from-file ssh-keys=.ssh/gcp_key.pub
+
+      - name: Create firewall rule for SSH access via IAP
+        run: |
+          gcloud compute firewall-rules create allow-ssh-ingress-from-iap \
+            --direction=INGRESS \
+            --action=allow \
+            --rules=tcp:22 \
+            --source-ranges=35.235.240.0/20
 
       - name: SSH into VM and set up Docker and Cassandra
         uses: google-github-actions/ssh-compute@v1
