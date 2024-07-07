@@ -214,8 +214,11 @@ jobs:
             echo 'Cassandra containers:';
             docker ps -a;
             echo 'Inspecting network details for CassandraDB-1...';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;
+            cassandra1_ip=$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1);
+            echo 'CassandraDB-1 IP: ' \$cassandra1_ip;
             echo 'Inspecting network details for CassandraDB-2...';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-2;
+            cassandra2_ip=$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-2);
+            echo 'CassandraDB-2 IP: ' \$cassandra2_ip;
             echo 'Inspecting network details for CassandraDB-3...';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-3;"
+            cassandra3_ip=$(docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-3);
+            echo 'CassandraDB-3 IP: ' \$cassandra3_ip;"
