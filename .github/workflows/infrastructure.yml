@@ -15,8 +15,8 @@ env:
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
   FIREWALL_RULE: allow-all
-  SSH_PRIVATE_KEY_PATH: .ssh/gcp_key
-  SSH_PUBLIC_KEY_PATH: .ssh/gcp_key.pub
+  SSH_PRIVATE_KEY_PATH: /home/runner/.ssh/gcp_key
+  SSH_PUBLIC_KEY_PATH: /home/runner/.ssh/gcp_key.pub
 
 jobs:
   setup-sql:
@@ -34,8 +34,9 @@ jobs:
 
       - name: Authenticate gcloud with service account key
         run: |
-          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > ${{ env.SSH_PRIVATE_KEY_PATH }}.json
-          gcloud auth activate-service-account --key-file=${{ env.SSH_PRIVATE_KEY_PATH }}.json
+          mkdir -p /home/runner/.ssh
+          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > /home/runner/gcp_key.json
+          gcloud auth activate-service-account --key-file=/home/runner/gcp_key.json
 
       - name: Configure gcloud
         run: |
@@ -120,8 +121,9 @@ jobs:
 
       - name: Authenticate gcloud with service account key
         run: |
-          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > ${{ env.SSH_PRIVATE_KEY_PATH }}.json
-          gcloud auth activate-service-account --key-file=${{ env.SSH_PRIVATE_KEY_PATH }}.json
+          mkdir -p /home/runner/.ssh
+          echo "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}" > /home/runner/gcp_key.json
+          gcloud auth activate-service-account --key-file=/home/runner/gcp_key.json
 
       - name: Configure gcloud
         run: |
@@ -194,10 +196,16 @@ jobs:
             --action=ALLOW \
             --rules=tcp:80,tcp:443,tcp:9042
 
+      - name: Setup SSH keys
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ${{ env.SSH_PRIVATE_KEY_PATH }}
+          echo "${{ secrets.GCP_PUBLIC_KEY }}" > ${{ env.SSH_PUBLIC_KEY_PATH }}
+          chmod 600 ${{ env.SSH_PRIVATE_KEY_PATH }}
+          chmod 644 ${{ env.SSH_PUBLIC_KEY_PATH }}
+
       - name: Add SSH Key to VM
         run: |
-          echo "${{ secrets.GCP_SSH_PRIVATE_KEY }}" > ${{ env.SSH_PRIVATE_KEY_PATH }}
-          echo "${{ secrets.GCP_SSH_PUBLIC_KEY }}" > ${{ env.SSH_PUBLIC_KEY_PATH }}
           gcloud compute instances add-metadata ${{ env.VM_NAME }} \
             --metadata-from-file ssh-keys=${{ env.SSH_PUBLIC_KEY_PATH }}
 
