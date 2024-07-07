@@ -197,26 +197,25 @@ jobs:
             sudo usermod -aG docker $USER;
             sudo systemctl restart docker"
 
+      - name: SSH into VM and delete existing Cassandra containers
+        run: |
+          gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
+            echo 'Deleting existing Cassandra containers if they exist...';
+            docker rm -f CassandraDB-1 || true;
+            docker rm -f CassandraDB-2 || true;
+            docker rm -f CassandraDB-3 || true;"
+
       - name: SSH into VM and set up Cassandra
         run: |
           gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
             echo 'Starting Docker and Cassandra setup...';
             echo 'Pulling Cassandra image...';
-            if [ $(docker ps -a -q -f name=CassandraDB-1) ]; then
-              docker rm -f CassandraDB-1;
-            fi;
             docker run --name CassandraDB-1 -d cassandra:3.11;
             echo 'Waiting for CassandraDB-1 to start...';
             sleep 30;
-            if [ $(docker ps -a -q -f name=CassandraDB-2) ]; then
-              docker rm -f CassandraDB-2;
-            fi;
             docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-2 to start...';
             sleep 30;
-            if [ $(docker ps -a -q -f name=CassandraDB-3) ]; then
-              docker rm -f CassandraDB-3;
-            fi;
             docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-3 to start...';
             sleep 30;
