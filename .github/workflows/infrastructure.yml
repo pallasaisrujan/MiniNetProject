@@ -136,7 +136,7 @@ jobs:
             --machine-type=e2-medium \
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
-            --boot-disk-size=200GB \
+            --boot-disk-size=50GB \
             --tags=http-server,https-server
 
       - name: Wait for VM creation
@@ -213,9 +213,9 @@ jobs:
             sleep 30;
             echo 'Cassandra containers:';
             docker ps -a;
-            echo 'Checking nodetool status for CassandraDB-1...';
-            docker exec -i -t CassandraDB-1 bash -c 'nodetool status';
-            echo 'Checking nodetool status for CassandraDB-2...';
-            docker exec -i -t CassandraDB-2 bash -c 'nodetool status';
-            echo 'Checking nodetool status for CassandraDB-3...';
-            docker exec -i -t CassandraDB-3 bash -c 'nodetool status'"
+            echo 'Inspecting network details for CassandraDB-1...';
+            docker inspect CassandraDB-1 --format='{{json .NetworkSettings.Networks}}';
+            echo 'Inspecting network details for CassandraDB-2...';
+            docker inspect CassandraDB-2 --format='{{json .NetworkSettings.Networks}}';
+            echo 'Inspecting network details for CassandraDB-3...';
+            docker inspect CassandraDB-3 --format='{{json .NetworkSettings.Networks}}'"
