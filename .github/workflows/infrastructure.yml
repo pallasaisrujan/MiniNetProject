@@ -190,8 +190,8 @@ jobs:
 
       - name: Add User to Docker Group
         run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.REGION }} --command "sudo usermod -aG docker $USER"
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.REGION }} --command "sudo systemctl restart docker"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo usermod -aG docker $USER"
+          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "sudo systemctl restart docker"
 
       - name: SSH into VM and set up Docker and Cassandra
         run: |
