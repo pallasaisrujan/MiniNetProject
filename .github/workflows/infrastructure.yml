@@ -203,7 +203,6 @@ jobs:
             echo 'Deleting existing Cassandra containers if they exist...';
             docker rm -f CassandraDB-1 || true;
             docker rm -f CassandraDB-2 || true;
-            docker rm -f CassandraDB-3 || true;"
 
       - name: SSH into VM and set up Cassandra
         run: |
@@ -216,9 +215,6 @@ jobs:
             docker run --name CassandraDB-2 --network host -d --link CassandraDB-1:cassandra cassandra:3.11;
             echo 'Waiting for CassandraDB-2 to start...';
             sleep 30;
-            docker run --name CassandraDB-3 --network host -d --link CassandraDB-1:cassandra cassandra:3.11;
-            echo 'Waiting for CassandraDB-3 to start...';
-            sleep 30;
             echo 'Cassandra containers:';
             docker ps -a;
             echo 'Checking IP addresses for CassandraDB containers...';
@@ -226,5 +222,4 @@ jobs:
             docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-1;
             echo 'CassandraDB-2 IP:';
             docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-2;
-            echo 'CassandraDB-3 IP:';
-            docker inspect --format='{{ .NetworkSettings.IPAddress }}' CassandraDB-3;"
+
