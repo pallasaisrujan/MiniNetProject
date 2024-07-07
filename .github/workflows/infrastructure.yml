@@ -14,7 +14,7 @@ env:
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
-  FIREWALL_RULE: allow-all-http-https-ports
+  FIREWALL_RULE: allow-all
 
 jobs:
   setup-sql:
@@ -22,11 +22,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         id: auth-gcp
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
@@ -103,11 +103,11 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         id: auth-gcp
-        uses: google-github-actions/auth@v0
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}'
 
@@ -136,26 +136,10 @@ jobs:
             --image=ubuntu-2004-focal-v20210720 \
             --image-project=ubuntu-os-cloud \
             --boot-disk-size=50GB \
-            --tags=http-server,https-server
+            --tags=http-server,https-server \
+            --metadata-from-file ssh-keys=.ssh/id_ed25519.pub
 
       - name: Wait for VM to be ready
-        run: sleep 60
-
-      - name: Install Docker and Run Cassandra Containers
-        run: |
-          gcloud compute ssh ${{ env.VM_NAME }} --zone ${{ env.ZONE }} --command "
-            sudo apt-get update
-            sudo apt-get install -y docker.io
-            sudo systemctl enable docker
-            sudo systemctl start docker
-            docker run --name CassandraDB-1 -d cassandra:3.11
-            sleep 60
-            docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11
-            sleep 60
-            docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11"
-            docker ps -a
-
-      - name: Wait for Docker setup
         run: sleep 60
 
       - name: Check if firewall rule exists
@@ -177,15 +161,36 @@ jobs:
             --priority=1000 \
             --network=default \
             --action=ALLOW \
-            --rules=tcp:22,tcp:80,tcp:443,tcp:9042
+            --rules=tcp:80,tcp:443
 
-      - name: Check CassandraDB status
-        run: |
-          for i in {1..5}; do
-            gcloud compute ssh ${{ env.VM_NAME }} --zone=${{ env.ZONE }} --command "
-              sleep 60
-              docker ps -a
-              docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
-              docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
-              docker exec -i -t CassandraDB-3 bash -c 'nodetool status'" && break || sleep 30
-          done
+      - name: Setup Docker and Cassandra
+        id: setup-docker-cassandra
+        uses: google-github-actions/ssh-compute@v1
+        with:
+          instance_name: ${{ env.VM_NAME }}
+          zone: ${{ env.ZONE }}
+          ssh_private_key: '${{ secrets.GCP_SSH_PRIVATE_KEY }}'
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo usermod -aG docker $USER
+            sudo systemctl enable docker
+            sudo systemctl start docker
+            docker run --name CassandraDB-1 -d cassandra:3.11
+            sleep 60
+            docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11
+            sleep 60
+            docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11
+
+      - name: Verify Cassandra Setup
+        uses: google-github-actions/ssh-compute@v1
+        with:
+          instance_name: ${{ env.VM_NAME }}
+          zone: ${{ env.ZONE }}
+          ssh_private_key: '${{ secrets.GCP_SSH_PRIVATE_KEY }}'
+          command: |
+            sleep 60
+            docker ps -a
+            docker exec -i -t CassandraDB-1 bash -c 'nodetool status'
+            docker exec -i -t CassandraDB-2 bash -c 'nodetool status'
+            docker exec -i -t CassandraDB-3 bash -c 'nodetool status'
