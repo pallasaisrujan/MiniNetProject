@@ -142,13 +142,36 @@ jobs:
       - name: Wait for VM creation
         run: sleep 60
 
+      - name: Check if firewall rule for SSH access via IAP exists
+        id: firewall-rule-iap-check
+        run: |
+          if gcloud compute firewall-rules describe allow-ssh-ingress-from-iap; then
+            echo "Firewall rule for SSH access via IAP already exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Firewall rule for SSH access via IAP does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create firewall rule for SSH access via IAP
+        if: steps.firewall-rule-iap-check.outputs.exists == 'false'
         run: |
           gcloud compute firewall-rules create allow-ssh-ingress-from-iap \
             --direction=INGRESS \
             --action=allow \
             --rules=tcp:22 \
             --source-ranges=35.235.240.0/20
+
+      - name: Check if firewall rule for VM exists
+        id: firewall-rule-check
+        run: |
+          if gcloud compute firewall-rules describe ${{ env.FIREWALL_RULE }}; then
+            echo "Firewall rule for VM already exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Firewall rule for VM does not exist"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create firewall rule for VM
         if: steps.firewall-rule-check.outputs.exists == 'false'
@@ -178,11 +201,11 @@ jobs:
             sudo systemctl enable docker;
             sudo systemctl start docker;
             docker run --name CassandraDB-1 -d cassandra:3.11;
-            sleep 60;
+            sleep 30;
             docker run --name CassandraDB-2 -d --link CassandraDB-1:cassandra cassandra:3.11;
-            sleep 60;
+            sleep 30;
             docker run --name CassandraDB-3 -d --link CassandraDB-1:cassandra cassandra:3.11;
-            sleep 60;
+            sleep 30;
             docker ps -a;
             docker exec -i -t CassandraDB-1 bash -c 'nodetool status';
             docker exec -i -t CassandraDB-2 bash -c 'nodetool status';
