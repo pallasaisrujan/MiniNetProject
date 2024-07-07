@@ -1,3 +1,13 @@
+-- Drop existing tables to avoid conflicts
+DROP TABLE IF EXISTS WatchHistory;
+DROP TABLE IF EXISTS MovieActor;
+DROP TABLE IF EXISTS FavoriteMovie;
+DROP TABLE IF EXISTS Review;
+DROP TABLE IF EXISTS Actor;
+DROP TABLE IF EXISTS Movie;
+DROP TABLE IF EXISTS Subscription;
+DROP TABLE IF EXISTS User;
+
 -- Create the User table
 CREATE TABLE User (
     UserID INT AUTO_INCREMENT PRIMARY KEY,
@@ -22,7 +32,7 @@ CREATE TABLE Subscription (
 
 -- Create the Movie table
 CREATE TABLE Movie (
-    MovieID INT AUTO_INCREMENT PRIMARY KEY,
+    MovieID INT PRIMARY KEY,
     Title VARCHAR(100) NOT NULL,
     Genre VARCHAR(30) NOT NULL,
     ReleaseDate DATE
@@ -30,7 +40,7 @@ CREATE TABLE Movie (
 
 -- Create the Actor table
 CREATE TABLE Actor (
-    ActorID INT AUTO_INCREMENT PRIMARY KEY,
+    ActorID INT PRIMARY KEY,
     Name VARCHAR(50) NOT NULL,
     City VARCHAR(30),
     DateOfBirth DATE
