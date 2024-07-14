@@ -8,7 +8,7 @@ from cassandra.query import SimpleStatement
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Cassandra connection details
-CASSANDRA_IP = '34.29.237.187'  # Your VM's external IP
+CASSANDRA_IP = '34.29.237.187'
 CASSANDRA_PORT = 9042
 
 

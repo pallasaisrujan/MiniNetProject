@@ -7,7 +7,6 @@ config = {
     'user': 'Birkbeck13924706',
     'password': 'Birkbeck@13924706',
     'host': '35.224.192.105',
-    'database': 'mininet-db',
     'raise_on_warnings': True
 }
 

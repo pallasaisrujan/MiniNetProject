@@ -1,88 +1,83 @@
--- Drop existing tables to avoid conflicts
-DROP TABLE IF EXISTS WatchHistory;
-DROP TABLE IF EXISTS MovieActor;
-DROP TABLE IF EXISTS FavoriteMovie;
-DROP TABLE IF EXISTS Review;
-DROP TABLE IF EXISTS Actor;
-DROP TABLE IF EXISTS Movie;
-DROP TABLE IF EXISTS Subscription;
-DROP TABLE IF EXISTS User;
+-- Drop the database if it exists to start fresh
+DROP DATABASE IF EXISTS mininet_db;
+CREATE DATABASE mininet_db;
+USE mininet_db;
 
--- Create the User table
-CREATE TABLE User (
-    UserID INT AUTO_INCREMENT PRIMARY KEY,
-    Username VARCHAR(30) NOT NULL,
-    Email VARCHAR(50) NOT NULL,
-    Password VARCHAR(20) NOT NULL,
-    SubscriptionType VARCHAR(20) NOT NULL,
-    City VARCHAR(30),
-    Country VARCHAR(30),
-    Age INT
+-- Create the UserInfo table
+CREATE TABLE UserInfo (
+    User_ID INT AUTO_INCREMENT PRIMARY KEY,
+    UserName VARCHAR(30) NOT NULL,
+    UserEmail VARCHAR(50) NOT NULL,
+    UserPassword VARCHAR(20) NOT NULL,
+    UserSubscriptionType VARCHAR(20) NOT NULL,
+    UserCity VARCHAR(30),
+    UserCountry VARCHAR(30),
+    UserAge INT
 );
 
--- Create the Subscription table
-CREATE TABLE Subscription (
-    SubscriptionID INT AUTO_INCREMENT PRIMARY KEY,
-    UserID INT,
-    PlanName VARCHAR(20) NOT NULL,
-    Price DECIMAL(5,2) NOT NULL,
-    Duration INT NOT NULL,
-    FOREIGN KEY (UserID) REFERENCES User(UserID)
+-- Create the UserSubscriptions table
+CREATE TABLE UserSubscriptions (
+    Subscription_ID INT AUTO_INCREMENT PRIMARY KEY,
+    User_ID INT,
+    SubscriptionPlanName VARCHAR(20) NOT NULL,
+    SubscriptionPrice DECIMAL(5,2) NOT NULL,
+    SubscriptionDuration INT NOT NULL,
+    FOREIGN KEY (User_ID) REFERENCES UserInfo(User_ID)
 );
 
--- Create the Movie table
-CREATE TABLE Movie (
-    MovieID INT PRIMARY KEY,
-    Title VARCHAR(100) NOT NULL,
-    Genre VARCHAR(30) NOT NULL,
-    ReleaseDate DATE
+-- Create the Films table
+CREATE TABLE Films (
+    Film_ID INT PRIMARY KEY,
+    FilmTitle VARCHAR(100) NOT NULL,
+    FilmGenre VARCHAR(30) NOT NULL,
+    FilmReleaseDate DATE
 );
 
--- Create the Actor table
-CREATE TABLE Actor (
-    ActorID INT PRIMARY KEY,
-    Name VARCHAR(50) NOT NULL,
-    City VARCHAR(30),
-    DateOfBirth DATE
+-- Create the FilmActors table
+CREATE TABLE FilmActors (
+    Actor_ID INT PRIMARY KEY,
+    ActorName VARCHAR(50) NOT NULL,
+    ActorCity VARCHAR(30),
+    ActorDOB DATE
 );
 
--- Create the Review table
-CREATE TABLE Review (
-    ReviewID INT AUTO_INCREMENT PRIMARY KEY,
-    UserID INT,
-    MovieID INT,
-    Score INT CHECK (Score BETWEEN 0 AND 5),
-    Comment VARCHAR(255),
-    FOREIGN KEY (UserID) REFERENCES User(UserID),
-    FOREIGN KEY (MovieID) REFERENCES Movie(MovieID)
+-- Create the FilmReviews table
+CREATE TABLE FilmReviews (
+    Review_ID INT AUTO_INCREMENT PRIMARY KEY,
+    User_ID INT,
+    Film_ID INT,
+    ReviewScore INT CHECK (ReviewScore BETWEEN 0 AND 5),
+    ReviewComment VARCHAR(255),
+    FOREIGN KEY (User_ID) REFERENCES UserInfo(User_ID),
+    FOREIGN KEY (Film_ID) REFERENCES Films(Film_ID)
 );
 
--- Create the FavoriteMovie table
-CREATE TABLE FavoriteMovie (
-    FavoriteID INT AUTO_INCREMENT PRIMARY KEY,
-    UserID INT,
-    MovieID INT,
-    Score INT CHECK (Score BETWEEN 0 AND 5),
-    FOREIGN KEY (UserID) REFERENCES User(UserID),
-    FOREIGN KEY (MovieID) REFERENCES Movie(MovieID)
+-- Create the FavoriteFilms table
+CREATE TABLE FavoriteFilms (
+    Favorite_ID INT AUTO_INCREMENT PRIMARY KEY,
+    User_ID INT,
+    Film_ID INT,
+    FavoriteScore INT CHECK (FavoriteScore BETWEEN 0 AND 5),
+    FOREIGN KEY (User_ID) REFERENCES UserInfo(User_ID),
+    FOREIGN KEY (Film_ID) REFERENCES Films(Film_ID)
 );
 
--- Create the MovieActor table
-CREATE TABLE MovieActor (
-    MovieID INT,
-    ActorID INT,
-    Role VARCHAR(50),
-    PRIMARY KEY (MovieID, ActorID),
-    FOREIGN KEY (MovieID) REFERENCES Movie(MovieID),
-    FOREIGN KEY (ActorID) REFERENCES Actor(ActorID)
+-- Create the FilmCast table
+CREATE TABLE FilmCast (
+    Film_ID INT,
+    Actor_ID INT,
+    FilmRole VARCHAR(50),
+    PRIMARY KEY (Film_ID, Actor_ID),
+    FOREIGN KEY (Film_ID) REFERENCES Films(Film_ID),
+    FOREIGN KEY (Actor_ID) REFERENCES FilmActors(Actor_ID)
 );
 
--- Create the WatchHistory table
-CREATE TABLE WatchHistory (
-    WatchID INT AUTO_INCREMENT PRIMARY KEY,
-    UserID INT,
-    MovieID INT,
-    WatchDate DATE,
-    FOREIGN KEY (UserID) REFERENCES User(UserID),
-    FOREIGN KEY (MovieID) REFERENCES Movie(MovieID)
+-- Create the ViewingHistory table
+CREATE TABLE ViewingHistory (
+    View_ID INT AUTO_INCREMENT PRIMARY KEY,
+    User_ID INT,
+    Film_ID INT,
+    ViewingDate DATE,
+    FOREIGN KEY (User_ID) REFERENCES UserInfo(User_ID),
+    FOREIGN KEY (Film_ID) REFERENCES Films(Film_ID)
 );

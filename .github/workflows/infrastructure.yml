@@ -10,7 +10,7 @@ env:
   REGION: us-central1
   ZONE: us-central1-a
   SQL_INSTANCE_NAME: mininet-sql-instance
-  DB_NAME: mininet-db
+  DB_NAME: mininet_db
   SQL_USERNAME: Birkbeck13924706
   SQL_PASSWORD: Birkbeck@13924706
   VM_NAME: cassandra-vm
